@@ -6,21 +6,52 @@ import com.badlogic.gdx.Gdx;
 
 public class GameLluviaGame extends ApplicationAdapter 
 {
-	private PantallaJuego pantalla;
+	private PantallaTutorial pantallaTutorial;
+    private PantallaJuego pantallaJuego;
+    private boolean jugando = false; // indica si ya empezó el juego
 	
 	@Override
-    public void create()
+	public void create() {
+        pantallaTutorial = new PantallaTutorial(this::comenzarJuego);
+        pantallaTutorial.show();
+    }
+	
+	private void comenzarJuego()
 	{
-        pantalla = new PantallaJuego();
-        pantalla.show();
+        jugando = true;
+
+        pantallaJuego = new PantallaJuego();
+        pantallaJuego.show();
+
+        if (pantallaTutorial != null) {
+            pantallaTutorial.dispose();
+            pantallaTutorial = null;
+        }
     }
 	
 	@Override
-    public void render() {pantalla.render(Gdx.graphics.getDeltaTime());}
+	public void render() 
+	{
+        float dt = Gdx.graphics.getDeltaTime();
+        if (jugando && pantallaJuego != null) 
+        {
+            pantallaJuego.render(dt);
+        } else if (pantallaTutorial != null) {
+            pantallaTutorial.render(dt);
+        }
+    }
 	
 	@Override
-    public void resize(int width, int height) {pantalla.resize(width, height);}
+	public void resize(int width, int height) 
+	{
+        if (pantallaTutorial != null) pantallaTutorial.resize(width, height);
+        if (pantallaJuego != null) pantallaJuego.resize(width, height);
+    }
 	
 	@Override
-    public void dispose() {pantalla.dispose();}		
+	public void dispose()
+	{
+        if (pantallaTutorial != null) pantallaTutorial.dispose();
+        if (pantallaJuego != null) pantallaJuego.dispose();
+    }	
 }
