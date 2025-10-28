@@ -1,0 +1,108 @@
+package com.tuempresa.gamelluvia;
+
+
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.ScreenAdapter;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
+
+public class PantallaJuego extends ScreenAdapter {
+	
+	private SpriteBatch batch;
+    private OrthographicCamera cam;
+    private Viewport viewport;
+
+    private Tarro tarro;
+    private final Array<Lluvia> gotas = new Array<>();
+
+    private float tiempoSpawn = 0f;
+    
+    @Override
+    public void show()
+    {
+        batch = new SpriteBatch();
+        cam = new OrthographicCamera();
+        viewport = new FitViewport(ConstantesJuego.ANCHO_MUNDO, ConstantesJuego.ALTO_MUNDO, cam);
+        viewport.apply();
+
+        float wTarro = 64f, hTarro = 64f;
+        tarro = new Tarro((ConstantesJuego.ANCHO_MUNDO - wTarro) * 0.5f, 20f, wTarro, hTarro);
+    }
+    
+    @Override
+    public void render(float delta)
+    {
+    	actualizar(delta);
+
+        Gdx.gl.glClearColor(0, 0, 0, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+        cam.update();
+        batch.setProjectionMatrix(cam.combined);
+
+        batch.begin();
+        tarro.render(batch);
+        for (Lluvia g : gotas) g.render(batch);
+        batch.end();
+    }
+    
+    private void actualizar(float dt) 
+    {
+        tarro.update(dt);
+
+        // Spawner usando constantes
+        tiempoSpawn += dt;
+        if (tiempoSpawn > 0.30f)
+        {
+            tiempoSpawn = 0f;
+            float w = 32f, h = 32f;
+            float x = MathUtils.random(0f, ConstantesJuego.ANCHO_MUNDO - w);
+            float vel = MathUtils.random(ConstantesJuego.MIN_VEL_LLUVIA, ConstantesJuego.MAX_VEL_LLUVIA);
+            gotas.add(new Lluvia(x, w, h, vel));
+        }
+
+        // Actualizar / colisiones / limpieza
+        for (int i = gotas.size - 1; i >= 0; i--) 
+        {
+            Lluvia g = gotas.get(i);
+            g.update(dt);
+
+            if (colisiona(tarro, g)) 
+            {
+                g.dispose();
+                gotas.removeIndex(i);
+                // aquí: sumar puntaje, sonido, etc.
+                
+            } 
+            else if (g.fueraDePantalla())
+            {
+                g.dispose();
+                gotas.removeIndex(i);
+            }
+        }
+    }
+    
+    private boolean colisiona(Colisionable a, Colisionable b) {
+    	return a.getBounds().overlaps(b.getBounds());
+    }
+    
+    @Override
+    public void resize(int width, int height) {viewport.update(width, height, true);}
+    
+    @Override
+    public void hide() { dispose(); }
+    
+    @Override
+    public void dispose() 
+    {
+        if (batch != null) batch.dispose();
+        if (tarro != null) tarro.dispose();
+        for (Lluvia g : gotas) g.dispose();
+        gotas.clear();
+    }
+    
