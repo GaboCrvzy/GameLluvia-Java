@@ -1,0 +1,32 @@
+package com.tuempresa.gamelluvia;
+
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
+import com.badlogic.gdx.graphics.Texture;
+
+
+public class Tarro extends Entidad implements Colisionable
+{
+	private float velocidad = ConstantesJuego.VELOCIDAD_TARRO;
+	
+	public Tarro(float x, float y, float w, float h)
+	{
+		super(new Texture("bucket.png"), x,y,w,h);
+	}
+	
+	@Override
+	public void update(float dt) 
+	{
+        float nx = getX();
+        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) nx -= velocidad * dt;
+        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) nx += velocidad * dt;
+        setXLimites(nx, ConstantesJuego.ANCHO_MUNDO);
+	}
+	
+	@Override
+    public void onCollision(Entidad other) 
+	{
+        // Manejar en la pantalla (puntaje, sonido, etc.)
+    }
+	   
+}
