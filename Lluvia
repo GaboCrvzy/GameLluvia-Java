@@ -1,23 +1,19 @@
 package com.tuempresa.gamelluvia;
 
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.math.MathUtils;
 
 public class Lluvia extends Entidad implements Colisionable 
 {
 	 private float velocidad;
 	 
-	 public Lluvia(float x, float y, float w, float h)
+	 public Lluvia(float x, float y, float w, float h, float velocidad) 
 	 {
-	     super(new Texture("drop.png"), x, y, w, h);
-	     this.velocidad = MathUtils.random(ConstantesJuego.MIN_VEL_LLUVIA, ConstantesJuego.MAX_VEL_LLUVIA);
-	 }
+	        super(new Texture("drop.png"), x, y, w, h);
+	        this.velocidad = velocidad;
+	  }
 	 
 	 @Override
-	 public void update(float dt) 
-	 {
-	     setY(getY() - velocidad * dt);
-	 }
+	 public void update(float dt) {setY(getY() - velocidad * dt);}
 	 
 	 public boolean fueraDePantalla() {return getY() + getHeight() < 0f;}
 	 
@@ -28,3 +24,4 @@ public class Lluvia extends Entidad implements Colisionable
 	 }
 
 }
+
