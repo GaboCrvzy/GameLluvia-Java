@@ -1,0 +1,15 @@
+package com.tuempresa.gamelluvia;
+
+
+public final class ConstantesJuego {
+
+	//tamaño 5:3
+	public static final float ANCHO_MUNDO = 800f;
+	public static final float ALTO_MUNDO = 480f;
+	
+	public static final float VELOCIDAD_TARRO = 300f;
+    public static final float MIN_VEL_LLUVIA  = 120f;
+    public static final float MAX_VEL_LLUVIA  = 240f;
+	
+	private ConstantesJuego() {}
+}
