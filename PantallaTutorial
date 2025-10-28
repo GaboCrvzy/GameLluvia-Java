@@ -1,0 +1,84 @@
+package com.tuempresa.gamelluvia;
+
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
+import com.badlogic.gdx.ScreenAdapter;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
+
+
+public class PantallaTutorial extends ScreenAdapter  {
+	
+	private final Runnable alComenzar;
+    private SpriteBatch batch;
+    private BitmapFont font;
+    private OrthographicCamera cam;
+    private Viewport viewport;
+
+    // Para no disparar el callback más de una vez
+    private boolean solicitado = false;
+
+    public PantallaTutorial(Runnable alComenzar) {
+        this.alComenzar = alComenzar;
+    }
+
+    @Override
+    public void show() {
+        batch = new SpriteBatch();
+        font = new BitmapFont();
+        cam = new OrthographicCamera();
+        viewport = new FitViewport(ConstantesJuego.ANCHO_MUNDO, ConstantesJuego.ALTO_MUNDO, cam);
+        viewport.apply();
+        solicitado = false;
+    }
+
+    @Override
+    public void render(float delta)
+    {
+        if (!solicitado && (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)
+                || Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)
+                || Gdx.input.justTouched()))
+        {
+            solicitado = true;
+            if (alComenzar != null) alComenzar.run();
+            return;
+        }
+
+        Gdx.gl.glClearColor(0, 0, 0.2f, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+        cam.update();
+        batch.setProjectionMatrix(cam.combined);
+        batch.begin();
+
+        float x = 60f;
+        float y = ConstantesJuego.ALTO_MUNDO - 60f;
+        font.getData().setScale(1.2f);
+        font.draw(batch, "GAME LLUVIA — TUTORIAL", x, y);
+
+        font.getData().setScale(1.0f);
+        y -= 40f;
+        font.draw(batch, "Objetivo: atrapa gotas buenas y evita las malas.", x, y);
+        y -= 25f;
+        font.draw(batch, "Controles: ← →  o  A / D para mover el tarro.", x, y);
+        y -= 25f;
+        font.draw(batch, "Pulsa ENTER o haz clic para comenzar.", x, y);
+
+        batch.end();
+    }
+    
+    @Override
+    public void resize(int width, int height) {viewport.update(width, height, true);}
+    
+    @Override
+    public void dispose() 
+    {
+        batch.dispose();
+        font.dispose();
+    }
+
+}
