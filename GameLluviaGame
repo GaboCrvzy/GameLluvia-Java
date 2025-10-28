@@ -1,0 +1,26 @@
+package com.tuempresa.gamelluvia;
+
+
+import com.badlogic.gdx.ApplicationAdapter;
+import com.badlogic.gdx.Gdx;
+
+public class GameLluviaGame extends ApplicationAdapter 
+{
+	private PantallaJuego pantalla;
+	
+	@Override
+    public void create()
+	{
+        pantalla = new PantallaJuego();
+        pantalla.show();
+    }
+	
+	@Override
+    public void render() {pantalla.render(Gdx.graphics.getDeltaTime());}
+	
+	@Override
+    public void resize(int width, int height) {pantalla.resize(width, height);}
+	
+	@Override
+    public void dispose() {pantalla.dispose();}		
+}
