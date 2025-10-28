@@ -59,11 +59,16 @@ public class PantallaJuego extends ScreenAdapter {
         tiempoSpawn += dt;
         if (tiempoSpawn > 0.30f)
         {
-            tiempoSpawn = 0f;
-            float w = 32f, h = 32f;
-            float x = MathUtils.random(0f, ConstantesJuego.ANCHO_MUNDO - w);
-            float vel = MathUtils.random(ConstantesJuego.MIN_VEL_LLUVIA, ConstantesJuego.MAX_VEL_LLUVIA);
-            gotas.add(new Lluvia(x, w, h, vel));
+        	float w = 32f, h = 32f;
+        	float x = MathUtils.random(0f, viewport.getWorldWidth() - w);
+
+        	// si Y crece hacia ARRIBA (lo normal):
+        	float y = viewport.getWorldHeight();      // empieza justo arriba (fuera de vista)
+
+        	float vel = MathUtils.random(ConstantesJuego.MIN_VEL_LLUVIA,
+        	                             ConstantesJuego.MAX_VEL_LLUVIA);
+
+        	gotas.add(new Lluvia(x, y, w, h, vel));
         }
 
         // Actualizar / colisiones / limpieza
@@ -106,3 +111,5 @@ public class PantallaJuego extends ScreenAdapter {
         gotas.clear();
     }
     
+
+}
