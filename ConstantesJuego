@@ -19,8 +19,8 @@ public final class ConstantesJuego {
     public static final float INTERVALO_SPAWN      = 0.30f;
 
     // Mecánica
-    public static final int VIDAS_INICIALES = 3;
-    public static final int PUNTOS_META     = 20;
+    public static final int VIDAS_INICIALES = 4;
+    public static final int PUNTOS_META     = 100;
 
     // Sonidos
     public static final String SND_ATRAPAR_BUENA = "drop.wav"; 
