@@ -1,15 +1,34 @@
 package com.tuempresa.gamelluvia;
 
-
 public final class ConstantesJuego {
+    // Mundo 5:3
+    public static final float ANCHO_MUNDO = 800f;
+    public static final float ALTO_MUNDO  = 480f;
 
-	//tamaño 5:3
-	public static final float ANCHO_MUNDO = 800f;
-	public static final float ALTO_MUNDO = 480f;
-	
-	public static final float VELOCIDAD_TARRO = 300f;
-    public static final float MIN_VEL_LLUVIA  = 120f;
-    public static final float MAX_VEL_LLUVIA  = 240f;
-	
-	private ConstantesJuego() {}
+    // Tarro
+    public static final float VELOCIDAD_TARRO = 300f;
+
+    // Lluvias
+    public static final float MIN_VEL_LLUVIA_BUENA = 120f;
+    public static final float MAX_VEL_LLUVIA_BUENA = 240f;
+    public static final float MIN_VEL_LLUVIA_MALA  = 140f;
+    public static final float MAX_VEL_LLUVIA_MALA  = 260f;
+    public static final float PROB_LLUVIA_MALA     = 0.25f;
+    public static final float ANCHO_LLUVIA         = 32f;
+    public static final float ALTO_LLUVIA          = 32f;
+    public static final float INTERVALO_SPAWN      = 0.30f;
+
+    // Mecánica
+    public static final int VIDAS_INICIALES = 3;
+    public static final int PUNTOS_META     = 20;
+
+    // Sonidos
+    public static final String SND_ATRAPAR_BUENA = "drop.wav"; 
+    public static final String SND_GOLPE_MALA    = "hurt.ogg"; 
+    public static final String SND_FALLAR_BUENA  = "drop.wav";
+
+    // Música 
+    public static final String MUSICA_FONDO      = "rain.mp3"; 
+
+    private ConstantesJuego() {}
 }
