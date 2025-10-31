@@ -1,10 +1,13 @@
 package com.tuempresa.gamelluvia;
 
-
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.ScreenAdapter;
+import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
@@ -12,16 +15,28 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
 public class PantallaJuego extends ScreenAdapter {
-	
-	private SpriteBatch batch;
+
+    private SpriteBatch batch;
     private OrthographicCamera cam;
     private Viewport viewport;
 
     private Tarro tarro;
-    private final Array<Lluvia> gotas = new Array<>();
+    private final Array<Lluvia>    gotasBuenas = new Array<>();
+    private final Array<LluviaMala> gotasMalas = new Array<>();
 
+    // HUD
+    private BitmapFont font;
+    private Sound sndAtraparBuena, sndGolpeMala;
+    private Music musica;
+
+    // Mecánica
+    private int puntos = 0;
+    private int vidas  = ConstantesJuego.VIDAS_INICIALES;
     private float tiempoSpawn = 0f;
-    
+
+    private enum Estado { JUGANDO, GANASTE, GAME_OVER }
+    private Estado estado = Estado.JUGANDO;
+
     @Override
     public void show()
     {
@@ -30,86 +45,157 @@ public class PantallaJuego extends ScreenAdapter {
         viewport = new FitViewport(ConstantesJuego.ANCHO_MUNDO, ConstantesJuego.ALTO_MUNDO, cam);
         viewport.apply();
 
+        font = new BitmapFont();
+
+        // Sonidos
+        sndAtraparBuena = Gdx.audio.newSound(Gdx.files.internal(ConstantesJuego.SND_ATRAPAR_BUENA));
+        sndGolpeMala    = Gdx.audio.newSound(Gdx.files.internal(ConstantesJuego.SND_GOLPE_MALA));
+
+        // Música 
+        musica = Gdx.audio.newMusic(Gdx.files.internal(ConstantesJuego.MUSICA_FONDO));
+        musica.setLooping(true);
+        musica.setVolume(0.35f);
+        musica.play();
+
+        // Tarro 
         float wTarro = 64f, hTarro = 64f;
         tarro = new Tarro((ConstantesJuego.ANCHO_MUNDO - wTarro) * 0.5f, 20f, wTarro, hTarro);
-    }
-    
-    @Override
-    public void render(float delta)
-    {
-    	actualizar(delta);
 
+        // Estado inicial
+        gotasBuenas.clear();
+        gotasMalas.clear();
+        puntos = 0;
+        vidas  = ConstantesJuego.VIDAS_INICIALES;
+        estado = Estado.JUGANDO;
+        tiempoSpawn = 0f;
+    }
+
+    @Override
+    public void render(float delta) 
+    {
+        // Reinicio rápido si termino
+        if (estado != Estado.JUGANDO &&
+            (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isButtonJustPressed(Input.Buttons.LEFT))) {
+            show(); // reinicia la pantalla
+            return;
+        }
+
+        if (estado == Estado.JUGANDO) actualizar(delta);
+
+        // Clear y dibujado
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         cam.update();
         batch.setProjectionMatrix(cam.combined);
-
         batch.begin();
+
         tarro.render(batch);
-        for (Lluvia g : gotas) g.render(batch);
-        batch.end();
-    }
-    
-    private void actualizar(float dt) 
-    {
-        tarro.update(dt);
+        for (Lluvia g : gotasBuenas) g.render(batch);
+        for (LluviaMala m : gotasMalas) m.render(batch);
 
-        // Spawner usando constantes
-        tiempoSpawn += dt;
-        if (tiempoSpawn > 0.30f)
-        {
-        	float w = 32f, h = 32f;
-        	float x = MathUtils.random(0f, viewport.getWorldWidth() - w);
+        // HUD
+        font.getData().setScale(1.0f);
+        font.draw(batch, "Puntos: " + puntos, 10, ConstantesJuego.ALTO_MUNDO - 10);
+        font.draw(batch, "Vidas: "  + vidas,  10, ConstantesJuego.ALTO_MUNDO - 30);
 
-        	// si Y crece hacia ARRIBA (lo normal):
-        	float y = viewport.getWorldHeight();      // empieza justo arriba (fuera de vista)
-
-        	float vel = MathUtils.random(ConstantesJuego.MIN_VEL_LLUVIA,
-        	                             ConstantesJuego.MAX_VEL_LLUVIA);
-
-        	gotas.add(new Lluvia(x, y, w, h, vel));
+        if (estado == Estado.GANASTE) {
+            font.getData().setScale(1.4f);
+            font.draw(batch, "¡GANASTE! (ENTER para reiniciar)", 160, ConstantesJuego.ALTO_MUNDO / 2f);
+        } else if (estado == Estado.GAME_OVER) {
+            font.getData().setScale(1.4f);
+            font.draw(batch, "GAME OVER (ENTER para reiniciar)", 150, ConstantesJuego.ALTO_MUNDO / 2f);
         }
 
-        // Actualizar / colisiones / limpieza
-        for (int i = gotas.size - 1; i >= 0; i--) 
-        {
-            Lluvia g = gotas.get(i);
+        batch.end();
+    }
+
+    private void actualizar(float dt) {
+        tarro.update(dt);
+
+        // Spawn
+        tiempoSpawn += dt;
+        if (tiempoSpawn > ConstantesJuego.INTERVALO_SPAWN) {
+            tiempoSpawn = 0f;
+            spawnLluviaBuena();
+            if (MathUtils.randomBoolean(ConstantesJuego.PROB_LLUVIA_MALA)) spawnLluviaMala();
+        }
+
+        // Buenas
+        for (int i = gotasBuenas.size - 1; i >= 0; i--) {
+            Lluvia g = gotasBuenas.get(i);
             g.update(dt);
 
-            if (colisiona(tarro, g)) 
-            {
-                g.dispose();
-                gotas.removeIndex(i);
-                // aquí: sumar puntaje, sonido, etc.
-                
-            } 
-            else if (g.fueraDePantalla())
-            {
-                g.dispose();
-                gotas.removeIndex(i);
+            if (g.fueraDePantalla()) {
+                gotasBuenas.removeIndex(i);
+                // Sin penalización por dejarla caer
+                continue;
+            }
+
+            if (colisiona(tarro, g)) {
+                gotasBuenas.removeIndex(i);
+                puntos++;
+                if (sndAtraparBuena != null) sndAtraparBuena.play();
+                verificarEstado();
+            }
+        }
+
+        // Malas
+        for (int i = gotasMalas.size - 1; i >= 0; i--) {
+            LluviaMala m = gotasMalas.get(i);
+            m.update(dt);
+
+            if (m.fueraDePantalla()) {
+                gotasMalas.removeIndex(i); // sin penalización
+                continue;
+            }
+
+            if (colisiona(tarro, m)) {
+                gotasMalas.removeIndex(i);
+                vidas--;
+                if (sndGolpeMala != null) sndGolpeMala.play();
+                verificarEstado();
             }
         }
     }
-    
-    private boolean colisiona(Colisionable a, Colisionable b) {
-    	return a.getBounds().overlaps(b.getBounds());
-    }
-    
-    @Override
-    public void resize(int width, int height) {viewport.update(width, height, true);}
-    
-    @Override
-    public void hide() { dispose(); }
-    
-    @Override
-    public void dispose() 
-    {
-        if (batch != null) batch.dispose();
-        if (tarro != null) tarro.dispose();
-        for (Lluvia g : gotas) g.dispose();
-        gotas.clear();
-    }
-    
 
+    private void verificarEstado() {
+        if (puntos >= ConstantesJuego.PUNTOS_META) {
+            estado = Estado.GANASTE;
+        } else if (vidas <= 0) {
+            estado = Estado.GAME_OVER;
+        }
+    }
+
+    private void spawnLluviaBuena() {
+        float w = ConstantesJuego.ANCHO_LLUVIA, h = ConstantesJuego.ALTO_LLUVIA;
+        float x = MathUtils.random(0f, viewport.getWorldWidth() - w);
+        float y = viewport.getWorldHeight(); 
+        float vel = MathUtils.random(ConstantesJuego.MIN_VEL_LLUVIA_BUENA, ConstantesJuego.MAX_VEL_LLUVIA_BUENA);
+        gotasBuenas.add(new Lluvia(x, y, w, h, vel));
+    }
+
+    private void spawnLluviaMala() {
+        float w = ConstantesJuego.ANCHO_LLUVIA, h = ConstantesJuego.ALTO_LLUVIA;
+        float x = MathUtils.random(0f, viewport.getWorldWidth() - w);
+        float y = viewport.getWorldHeight(); 
+        float vel = MathUtils.random(ConstantesJuego.MIN_VEL_LLUVIA_MALA, ConstantesJuego.MAX_VEL_LLUVIA_MALA);
+        gotasMalas.add(new LluviaMala(x, y, w, h, vel));
+    }
+
+    private boolean colisiona(Colisionable a, Colisionable b) {
+        return a.getBounds().overlaps(b.getBounds());
+    }
+
+    @Override
+    public void resize(int width, int height) { viewport.update(width, height, true); }
+
+    @Override
+    public void dispose() {
+        if (batch != null) batch.dispose();
+        if (font  != null) font.dispose();
+        if (sndAtraparBuena != null) sndAtraparBuena.dispose();
+        if (sndGolpeMala    != null) sndGolpeMala.dispose();
+        if (musica != null) { musica.stop(); musica.dispose(); }
+    }
 }
