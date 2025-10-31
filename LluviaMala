@@ -1,0 +1,24 @@
+package com.tuempresa.gamelluvia;
+
+import com.badlogic.gdx.graphics.Texture;
+
+public class LluviaMala extends Entidad implements Colisionable {
+    private float velocidad;
+
+    public LluviaMala(float x, float y, float w, float h, float velocidad) {
+        super(new Texture("dropBad.png"), x, y, w, h);
+        this.velocidad = velocidad;
+    }
+
+    @Override
+    public void update(float dt) {
+        setY(getY() - velocidad * dt);
+    }
+
+    public boolean fueraDePantalla() {
+        return getY() + getHeight() < 0f;
+    }
+
+    @Override
+    public void onCollision(Entidad other) {}
+}
