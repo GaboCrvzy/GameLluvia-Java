@@ -1,0 +1,301 @@
+package com.tuempresa.gamelluvia;
+
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
+import com.badlogic.gdx.ScreenAdapter;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Interpolation;
+import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
+
+
+public class PantallaMenu extends ScreenAdapter {
+
+    private final Runnable alJugar;
+    private final Runnable alSalir;
+    private SpriteBatch batch;
+    private OrthographicCamera cam;
+    private Viewport viewport;
+
+    private BitmapFont titleFont;
+    private BitmapFont bodyFont;
+    private final GlyphLayout layout = new GlyphLayout();
+
+    private Texture texBlanca;  
+    private Texture texDrop;     // decoración y fondo
+    private Texture texBucket;   // decoración
+
+    private final Array<MenuButton> botones = new Array<>();
+    private RainBackground fondo;
+    private float fadeIn = 0f;       
+    private final Vector3 tmp = new Vector3();
+    private boolean primerClickConsumido = false;
+
+    private static final Color COLOR_BG_1 = new Color(0.06f, 0.09f, 0.13f, 1f);
+    private static final Color COLOR_BG_2 = new Color(0.05f, 0.10f, 0.18f, 1f);
+    private static final Color COLOR_TIT  = new Color(0.85f, 0.93f, 1f, 1f);
+    private static final Color COLOR_SUB  = new Color(0.85f, 0.90f, 0.98f, 0.9f);
+
+    public PantallaMenu(Runnable alJugar, Runnable alSalir) {
+        this.alJugar = alJugar;
+        this.alSalir = alSalir;
+    }
+
+    @Override
+    public void show()
+    {
+        batch = new SpriteBatch();
+        cam = new OrthographicCamera();
+        viewport = new FitViewport(ConstantesJuego.ANCHO_MUNDO, ConstantesJuego.ALTO_MUNDO, cam);
+        viewport.apply();
+
+        titleFont = new BitmapFont(); titleFont.getData().setScale(1.6f); // fija
+        bodyFont  = new BitmapFont(); bodyFont.getData().setScale(1.0f);
+
+        // textura blanca 
+        Pixmap pm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pm.setColor(Color.WHITE);
+        pm.fill();
+        texBlanca = new Texture(pm);
+        pm.dispose();
+
+        // decoraciones/fondo
+        texDrop   = new Texture("drop.png");
+        texBucket = new Texture("bucket.png");
+
+        // componentes
+        fondo = new RainBackground(texDrop, 40,ConstantesJuego.ANCHO_MUNDO, ConstantesJuego.ALTO_MUNDO);
+        crearBotones();
+        
+        fadeIn = 0f;
+        primerClickConsumido = false;
+    }
+
+    private void crearBotones() 
+    {
+        botones.clear();
+        float bw = 240, bh = 50;
+        float cx = (ConstantesJuego.ANCHO_MUNDO - bw) * 0.5f;
+        float baseY = ConstantesJuego.ALTO_MUNDO * 0.48f;
+
+        botones.add(new MenuButton("JUGAR", cx, baseY, bw, bh, bodyFont, () -> 
+        {
+            if (alJugar != null) alJugar.run();
+        }));
+
+        botones.add(new MenuButton("SALIR", cx, baseY - 70, bw, bh, bodyFont, () -> {
+            if (alSalir != null) alSalir.run();
+            else Gdx.app.exit();
+        }));
+    }
+
+    @Override
+    public void render(float delta)
+    {
+        fadeIn = Math.min(1f, fadeIn + delta * 1.5f);
+        fondo.update(delta);
+
+        manejarInput();
+
+        Gdx.gl.glClearColor(COLOR_BG_1.r, COLOR_BG_1.g, COLOR_BG_1.b, 1f);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+        cam.update();
+        batch.setProjectionMatrix(cam.combined);
+        batch.begin();
+
+        batch.setColor(COLOR_BG_1);
+        batch.draw(texBlanca, 0, 0, ConstantesJuego.ANCHO_MUNDO, ConstantesJuego.ALTO_MUNDO);
+        batch.setColor(COLOR_BG_2);
+        batch.draw(texBlanca, 0, ConstantesJuego.ALTO_MUNDO * 0.45f,
+                ConstantesJuego.ANCHO_MUNDO, ConstantesJuego.ALTO_MUNDO * 0.55f);
+        batch.setColor(Color.WHITE);
+
+        // Lluvia de fondo
+        fondo.render(batch);
+
+        // Título 
+        String titulo = "GAME LLUVIA";
+        float a = Interpolation.fade.apply(fadeIn);
+        titleFont.setColor(COLOR_TIT.r, COLOR_TIT.g, COLOR_TIT.b, a);
+        layout.setText(titleFont, titulo);
+        float tx = (ConstantesJuego.ANCHO_MUNDO - layout.width) * 0.5f;
+        float ty = ConstantesJuego.ALTO_MUNDO - 80;
+        titleFont.draw(batch, layout, tx, ty);
+
+        // Subtítulo
+        bodyFont.setColor(COLOR_SUB);
+        String sub = "Atrapa gotas buenas. Evita las malas. Solo las malas te quitan vida.";
+        layout.setText(bodyFont, sub);
+        bodyFont.draw(batch, layout,
+                (ConstantesJuego.ANCHO_MUNDO - layout.width) * 0.5f, ty - 28);
+
+        // Decoración
+        batch.setColor(1f, 1f, 1f, 0.20f);
+        batch.draw(texBucket, ConstantesJuego.ANCHO_MUNDO - 110, 18, 92, 92);
+        batch.setColor(Color.WHITE);
+
+        // Botones
+        float mx = Gdx.input.getX(), my = Gdx.input.getY();
+        viewport.unproject(tmp.set(mx, my, 0));
+        for (MenuButton b : botones) {
+            b.setHover(b.hit(tmp.x, tmp.y));
+            b.render(batch, texBlanca);
+        }
+
+        // Restaurar color fuente 
+        titleFont.setColor(1,1,1,1);
+        bodyFont.setColor(1,1,1,1);
+
+        batch.end();
+    }
+
+    private void manejarInput() 
+    {
+        // ENTER = primer botón (JUGAR)
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) 
+        {
+            if (botones.size > 0) botones.first().click();
+            return;
+        }
+
+        // Primer clic 
+        if (!primerClickConsumido) {
+            if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT))
+            {
+                primerClickConsumido = true;
+                return;
+            }
+        } else {
+            if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+                float mx = Gdx.input.getX(), my = Gdx.input.getY();
+                viewport.unproject(tmp.set(mx, my, 0));
+                for (MenuButton b : botones) {
+                    if (b.hit(tmp.x, tmp.y)) { b.click(); return; }
+                }
+            }
+        }
+    }
+
+    @Override public void resize(int w, int h) { viewport.update(w, h, true); }
+
+    @Override
+    public void dispose() {
+        if (batch != null) batch.dispose();
+        if (titleFont != null) titleFont.dispose();
+        if (bodyFont != null) bodyFont.dispose();
+        if (texBlanca != null) texBlanca.dispose();
+        if (texDrop != null) texDrop.dispose();
+        if (texBucket != null) texBucket.dispose();
+        if (fondo != null) fondo.dispose();
+    }
+
+    // Clases internas
+
+    private static final class RainBackground 
+    {
+        private static final class Drop {float x, y, v, s, a;}
+        
+        private final Texture dropTex;
+        private final Array<Drop> drops = new Array<>();
+        private final float worldW, worldH;
+
+        RainBackground(Texture dropTex, int cantidad, float worldW, float worldH) {
+            this.dropTex = dropTex;
+            this.worldW = worldW;
+            this.worldH = worldH;
+            for (int i = 0; i < cantidad; i++) drops.add(nueva());
+        }
+
+        private Drop nueva() 
+        {
+            Drop d = new Drop();
+            d.x = MathUtils.random(0, worldW);
+            d.y = MathUtils.random(0, worldH);
+            d.v = MathUtils.random(40f, 90f);
+            d.s = MathUtils.random(0.5f, 1.0f);
+            d.a = MathUtils.random(0.25f, 0.6f);
+            return d;
+        }
+
+        void update(float dt) {
+            for (int i = 0; i < drops.size; i++) {
+                Drop d = drops.get(i);
+                d.y -= d.v * dt;
+                d.x += MathUtils.sinDeg((d.y + d.x) * 0.2f) * 10f * dt;
+                if (d.y < -16) {
+                    d.y = worldH + MathUtils.random(10f, 60f);
+                    d.x = MathUtils.random(0, worldW);
+                }
+            }
+        }
+
+        void render(SpriteBatch batch) {
+            for (int i = 0; i < drops.size; i++) {
+                Drop d = drops.get(i);
+                float s = 20f * d.s;
+                batch.setColor(1f, 1f, 1f, d.a);
+                batch.draw(dropTex, d.x, d.y, s, s);
+            }
+            batch.setColor(Color.WHITE);
+        }
+
+        void dispose() {}
+    }
+
+    // Botón reutilizable 
+    private static final class MenuButton 
+    {
+        private final String text;
+        private final Rectangle bounds;
+        private final Runnable action;
+        private final BitmapFont font;
+        private boolean hover;
+
+        MenuButton(String text, float x, float y, float w, float h,
+                   BitmapFont font, Runnable action) {
+            this.text = text;
+            this.bounds = new Rectangle(x, y, w, h);
+            this.action = action;
+            this.font = font;
+        }
+
+        boolean hit(float mx, float my) { return bounds.contains(mx, my); }
+        void setHover(boolean value) { hover = value; }
+        void click() { if (action != null) action.run(); }
+
+        void render(SpriteBatch b, Texture texBlanca)
+        {
+            // fondo
+            Color c = hover ? new Color(0.18f, 0.55f, 0.80f, 0.95f)
+                            : new Color(0.13f, 0.40f, 0.62f, 0.90f);
+            b.setColor(c);
+            b.draw(texBlanca, bounds.x, bounds.y, bounds.width, bounds.height);
+
+            // borde
+            b.setColor(0f, 0f, 0f, 0.35f);
+            b.draw(texBlanca, bounds.x, bounds.y, bounds.width, 2);
+            b.draw(texBlanca, bounds.x, bounds.y + bounds.height - 2, bounds.width, 2);
+            b.draw(texBlanca, bounds.x, bounds.y, 2, bounds.height);
+            b.draw(texBlanca, bounds.x + bounds.width - 2, bounds.y, 2, bounds.height);
+
+            // texto centrado
+            b.setColor(Color.WHITE);
+            GlyphLayout gl = new GlyphLayout(font, text);
+            float tx = bounds.x + (bounds.width  - gl.width)  * 0.5f;
+            float ty = bounds.y + (bounds.height + gl.height) * 0.5f;
+            font.draw(b, gl, tx, ty);
+        }
+    }
+}
