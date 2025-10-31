@@ -56,7 +56,7 @@ public abstract class Entidad {
         this.tam.set(w, h);
     }
 
-    // Setters con limites del mundo (clamp)
+    // Setters con limites del mundo 
     public void setXLimites(float x, float anchoMundo) 
     {
     	this.posicion.x = MathUtils.clamp(x, 0f, ConstantesJuego.ANCHO_MUNDO - tam.x);
@@ -65,6 +65,5 @@ public abstract class Entidad {
     public void setYLimites(float y, float altoMundo) 
     {
     	this.posicion.y = MathUtils.clamp(y, 0f, ConstantesJuego.ALTO_MUNDO - tam.y);
-    }
-    
+    }    
 }
