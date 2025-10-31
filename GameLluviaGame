@@ -1,57 +1,45 @@
 package com.tuempresa.gamelluvia;
 
-
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 
-public class GameLluviaGame extends ApplicationAdapter 
-{
-	private PantallaTutorial pantallaTutorial;
+public class GameLluviaGame extends ApplicationAdapter {
+    private PantallaMenu pantallaMenu;
     private PantallaJuego pantallaJuego;
-    private boolean jugando = false; // indica si ya empezó el juego
-	
-	@Override
-	public void create() {
-        pantallaTutorial = new PantallaTutorial(this::comenzarJuego);
-        pantallaTutorial.show();
-    }
-	
-	private void comenzarJuego()
-	{
-        jugando = true;
+    private boolean jugando = false;
 
+    @Override
+    public void create() {
+        pantallaMenu = new PantallaMenu(
+            this::comenzarJuego,      // al JUGAR
+            () -> Gdx.app.exit()      // al SALIR
+        );
+        pantallaMenu.show();
+    }
+
+    private void comenzarJuego() {
+        if (pantallaMenu != null) { pantallaMenu.dispose(); pantallaMenu = null; }
         pantallaJuego = new PantallaJuego();
         pantallaJuego.show();
+        jugando = true;
+    }
 
-        if (pantallaTutorial != null) {
-            pantallaTutorial.dispose();
-            pantallaTutorial = null;
-        }
-    }
-	
-	@Override
-	public void render() 
-	{
+    @Override
+    public void render() {
         float dt = Gdx.graphics.getDeltaTime();
-        if (jugando && pantallaJuego != null) 
-        {
-            pantallaJuego.render(dt);
-        } else if (pantallaTutorial != null) {
-            pantallaTutorial.render(dt);
-        }
+        if (jugando && pantallaJuego != null) pantallaJuego.render(dt);
+        else if (pantallaMenu != null)        pantallaMenu.render(dt);
     }
-	
-	@Override
-	public void resize(int width, int height) 
-	{
-        if (pantallaTutorial != null) pantallaTutorial.resize(width, height);
-        if (pantallaJuego != null) pantallaJuego.resize(width, height);
+
+    @Override
+    public void resize(int w, int h) {
+        if (pantallaMenu != null) pantallaMenu.resize(w, h);
+        if (pantallaJuego != null) pantallaJuego.resize(w, h);
     }
-	
-	@Override
-	public void dispose()
-	{
-        if (pantallaTutorial != null) pantallaTutorial.dispose();
+
+    @Override
+    public void dispose() {
+        if (pantallaMenu != null) pantallaMenu.dispose();
         if (pantallaJuego != null) pantallaJuego.dispose();
-    }	
+    }
 }
