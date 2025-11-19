@@ -1,0 +1,37 @@
+package com.tuempresa.gamelluvia;
+
+public class GameManager 
+{
+
+    private static GameManager instancia;
+    private int puntos;
+    private int vidas;
+
+    // constructor privado
+    private GameManager() {reiniciar();}
+
+    public static GameManager getInstancia()
+    {
+        if (instancia == null) {instancia = new GameManager();}
+        return instancia;
+    }
+
+    // reinicia la partida
+    public void reiniciar() 
+    {
+        puntos = 0;
+        vidas = ConstantesJuego.VIDAS_INICIALES;
+    }
+
+    public void sumarPunto() {puntos++;}
+
+    public void perderVida() {vidas--;}
+
+    public int getPuntos() {return puntos;}
+
+    public int getVidas() {return vidas;}
+
+    public boolean juegoGanado() {return puntos >= ConstantesJuego.PUNTOS_META;}
+
+    public boolean juegoTerminado() {return vidas <= 0 || juegoGanado();}
+}
