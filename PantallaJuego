@@ -21,18 +21,18 @@ public class PantallaJuego extends ScreenAdapter {
     private Viewport viewport;
 
     private Tarro tarro;
-    private final Array<Lluvia>    gotasBuenas = new Array<>();
-    private final Array<LluviaMala> gotasMalas = new Array<>();
+    private final Array<Lluvia>     gotasBuenas = new Array<>();
+    private final Array<LluviaMala> gotasMalas  = new Array<>();
 
     // HUD
     private BitmapFont font;
     private Sound sndAtraparBuena, sndGolpeMala;
     private Music musica;
 
-    // Mecánica
-    private int puntos = 0;
-    private int vidas  = ConstantesJuego.VIDAS_INICIALES;
     private float tiempoSpawn = 0f;
+
+    // Singleton 
+    private final GameManager gameManager = GameManager.getInstancia();
 
     private enum Estado { JUGANDO, GANASTE, GAME_OVER }
     private Estado estado = Estado.JUGANDO;
@@ -61,11 +61,10 @@ public class PantallaJuego extends ScreenAdapter {
         float wTarro = 64f, hTarro = 64f;
         tarro = new Tarro((ConstantesJuego.ANCHO_MUNDO - wTarro) * 0.5f, 20f, wTarro, hTarro);
 
-        // Estado inicial
+        // Estado inicial de la partida
         gotasBuenas.clear();
         gotasMalas.clear();
-        puntos = 0;
-        vidas  = ConstantesJuego.VIDAS_INICIALES;
+        gameManager.reiniciar();   // reinicia los puntos y vidas en el singleton
         estado = Estado.JUGANDO;
         tiempoSpawn = 0f;
     }
@@ -73,10 +72,11 @@ public class PantallaJuego extends ScreenAdapter {
     @Override
     public void render(float delta) 
     {
-        // Reinicio rápido si termino
+        // Reinicio rápido si termimo
         if (estado != Estado.JUGANDO &&
-            (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isButtonJustPressed(Input.Buttons.LEFT))) {
-            show(); // reinicia la pantalla
+            (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || 
+             Gdx.input.isButtonJustPressed(Input.Buttons.LEFT))) {
+            show(); // reinicia la pantalla y el GameManager
             return;
         }
 
@@ -95,16 +95,21 @@ public class PantallaJuego extends ScreenAdapter {
         for (LluviaMala m : gotasMalas) m.render(batch);
 
         // HUD
+        int puntos = gameManager.getPuntos();
+        int vidas  = gameManager.getVidas();
+
         font.getData().setScale(1.0f);
         font.draw(batch, "Puntos: " + puntos, 10, ConstantesJuego.ALTO_MUNDO - 10);
         font.draw(batch, "Vidas: "  + vidas,  10, ConstantesJuego.ALTO_MUNDO - 30);
 
         if (estado == Estado.GANASTE) {
             font.getData().setScale(1.4f);
-            font.draw(batch, "¡GANASTE! (ENTER para reiniciar)", 160, ConstantesJuego.ALTO_MUNDO / 2f);
+            font.draw(batch, "¡GANASTE! (ENTER para reiniciar)", 
+                      160, ConstantesJuego.ALTO_MUNDO / 2f);
         } else if (estado == Estado.GAME_OVER) {
             font.getData().setScale(1.4f);
-            font.draw(batch, "GAME OVER (ENTER para reiniciar)", 150, ConstantesJuego.ALTO_MUNDO / 2f);
+            font.draw(batch, "GAME OVER (ENTER para reiniciar)", 
+                      150, ConstantesJuego.ALTO_MUNDO / 2f);
         }
 
         batch.end();
@@ -118,7 +123,9 @@ public class PantallaJuego extends ScreenAdapter {
         if (tiempoSpawn > ConstantesJuego.INTERVALO_SPAWN) {
             tiempoSpawn = 0f;
             spawnLluviaBuena();
-            if (MathUtils.randomBoolean(ConstantesJuego.PROB_LLUVIA_MALA)) spawnLluviaMala();
+            if (MathUtils.randomBoolean(ConstantesJuego.PROB_LLUVIA_MALA)) {
+                spawnLluviaMala();
+            }
         }
 
         // Buenas
@@ -134,7 +141,7 @@ public class PantallaJuego extends ScreenAdapter {
 
             if (colisiona(tarro, g)) {
                 gotasBuenas.removeIndex(i);
-                puntos++;
+                gameManager.sumarPunto(); 
                 if (sndAtraparBuena != null) sndAtraparBuena.play();
                 verificarEstado();
             }
@@ -152,7 +159,7 @@ public class PantallaJuego extends ScreenAdapter {
 
             if (colisiona(tarro, m)) {
                 gotasMalas.removeIndex(i);
-                vidas--;
+                gameManager.perderVida();
                 if (sndGolpeMala != null) sndGolpeMala.play();
                 verificarEstado();
             }
@@ -160,9 +167,9 @@ public class PantallaJuego extends ScreenAdapter {
     }
 
     private void verificarEstado() {
-        if (puntos >= ConstantesJuego.PUNTOS_META) {
+        if (gameManager.juegoGanado()) {
             estado = Estado.GANASTE;
-        } else if (vidas <= 0) {
+        } else if (gameManager.juegoTerminado()) {  
             estado = Estado.GAME_OVER;
         }
     }
@@ -171,7 +178,8 @@ public class PantallaJuego extends ScreenAdapter {
         float w = ConstantesJuego.ANCHO_LLUVIA, h = ConstantesJuego.ALTO_LLUVIA;
         float x = MathUtils.random(0f, viewport.getWorldWidth() - w);
         float y = viewport.getWorldHeight(); 
-        float vel = MathUtils.random(ConstantesJuego.MIN_VEL_LLUVIA_BUENA, ConstantesJuego.MAX_VEL_LLUVIA_BUENA);
+        float vel = MathUtils.random(ConstantesJuego.MIN_VEL_LLUVIA_BUENA, 
+                                     ConstantesJuego.MAX_VEL_LLUVIA_BUENA);
         gotasBuenas.add(new Lluvia(x, y, w, h, vel));
     }
 
@@ -179,7 +187,8 @@ public class PantallaJuego extends ScreenAdapter {
         float w = ConstantesJuego.ANCHO_LLUVIA, h = ConstantesJuego.ALTO_LLUVIA;
         float x = MathUtils.random(0f, viewport.getWorldWidth() - w);
         float y = viewport.getWorldHeight(); 
-        float vel = MathUtils.random(ConstantesJuego.MIN_VEL_LLUVIA_MALA, ConstantesJuego.MAX_VEL_LLUVIA_MALA);
+        float vel = MathUtils.random(ConstantesJuego.MIN_VEL_LLUVIA_MALA, 
+                                     ConstantesJuego.MAX_VEL_LLUVIA_MALA);
         gotasMalas.add(new LluviaMala(x, y, w, h, vel));
     }
 
@@ -188,7 +197,9 @@ public class PantallaJuego extends ScreenAdapter {
     }
 
     @Override
-    public void resize(int width, int height) { viewport.update(width, height, true); }
+    public void resize(int width, int height) { 
+        viewport.update(width, height, true); 
+    }
 
     @Override
     public void dispose() {
@@ -196,6 +207,9 @@ public class PantallaJuego extends ScreenAdapter {
         if (font  != null) font.dispose();
         if (sndAtraparBuena != null) sndAtraparBuena.dispose();
         if (sndGolpeMala    != null) sndGolpeMala.dispose();
-        if (musica != null) { musica.stop(); musica.dispose(); }
+        if (musica != null) { 
+            musica.stop(); 
+            musica.dispose(); 
+        }
     }
 }
