@@ -23,8 +23,26 @@ public abstract class Entidad {
         this.tam      = new Vector2(w, h);
     }
 
-    // Actualiza la lógica del juego en cada frame, dt = delta time 
-    public abstract void update(float dt);
+    // TEMPLATE METHOD
+    // Define el algoritmo general 
+    public final void update(float dt) 
+    {
+        mover(dt);         // comportamiento específico 
+        aplicarLimites();  // comportamiento común
+        postUpdate(dt);    
+    }
+
+    // Cada subclase DEBE implementar
+    protected abstract void mover(float dt);
+
+    // Paso común para todas las entidades
+    protected void aplicarLimites()
+    {
+        setXLimites(posicion.x, ConstantesJuego.ANCHO_MUNDO);
+        setYLimites(posicion.y, ConstantesJuego.ALTO_MUNDO);
+    }
+
+    protected void postUpdate(float dt) {}
 
     // Dibuja la textura con el batch (pincel) de LibGDX
     public void render(SpriteBatch batch) {
@@ -37,7 +55,7 @@ public abstract class Entidad {
     }
 
     // Liberar la memoria de la textura cuando no se use 
-    public void dispose() {textura.dispose();}
+    public void dispose() { textura.dispose(); }
 
     // GETTERS
     public float getX()      { return posicion.x; }
@@ -45,25 +63,25 @@ public abstract class Entidad {
     public float getWidth()  { return tam.x; }
     public float getHeight() { return tam.y; }
 
+    public Vector2 getPosicion() { return posicion; }
+    public Vector2 getTam()      { return tam; }
+
     // SETTERS
     public void setX(float x) { this.posicion.x = x; }
     public void setY(float y) { this.posicion.y = y; }
 
     // Cambiar tamaño con validación
-    public void setSize(float w, float h) 
-    {
+    public void setSize(float w, float h) {
         if (w <= 0 || h <= 0) throw new IllegalArgumentException("El tamaño debe ser positivo");
         this.tam.set(w, h);
     }
 
     // Setters con limites del mundo 
-    public void setXLimites(float x, float anchoMundo) 
-    {
-    	this.posicion.x = MathUtils.clamp(x, 0f, ConstantesJuego.ANCHO_MUNDO - tam.x);
+    public void setXLimites(float x, float anchoMundo) {
+        this.posicion.x = MathUtils.clamp(x, 0f, anchoMundo - tam.x);
     }
 
-    public void setYLimites(float y, float altoMundo) 
-    {
-    	this.posicion.y = MathUtils.clamp(y, 0f, ConstantesJuego.ALTO_MUNDO - tam.y);
-    }    
+    public void setYLimites(float y, float altoMundo) {
+        this.posicion.y = MathUtils.clamp(y, 0f, altoMundo - tam.y);
+    }
 }
