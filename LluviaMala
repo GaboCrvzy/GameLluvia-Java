@@ -1,8 +1,10 @@
+
 package com.tuempresa.gamelluvia;
 
 import com.badlogic.gdx.graphics.Texture;
 
 public class LluviaMala extends Entidad implements Colisionable {
+
     private float velocidad;
 
     public LluviaMala(float x, float y, float w, float h, float velocidad) {
@@ -10,10 +12,14 @@ public class LluviaMala extends Entidad implements Colisionable {
         this.velocidad = velocidad;
     }
 
+    // Paso especifico del Template Method (como se mueve la gota mala)
     @Override
-    public void update(float dt) {
+    protected void mover(float dt) {
         setY(getY() - velocidad * dt);
     }
+
+    @Override
+    protected void aplicarLimites() {setXLimites(getX(), ConstantesJuego.ANCHO_MUNDO);}
 
     public boolean fueraDePantalla() {
         return getY() + getHeight() < 0f;
