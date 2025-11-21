@@ -1,0 +1,7 @@
+package com.tuempresa.gamelluvia;
+
+//Estrategia de movimiento para tarro (teclado o automatico)
+public interface EstrategiaMovimiento {
+	void mover(Tarro tarro, float dt);
+
+}
