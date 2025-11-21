@@ -1,36 +1,33 @@
 package com.tuempresa.gamelluvia;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Texture;
 
 public class Tarro extends Entidad implements Colisionable
 {
 
-    private float velocidad = ConstantesJuego.VELOCIDAD_TARRO;
+    // Estrategia de movimiento (Strategy)
+    private EstrategiaMovimiento estrategiaMovimiento;
 
-    public Tarro(float x, float y, float w, float h) {
+    public Tarro(float x, float y, float w, float h) 
+    {
         super(new Texture("bucket.png"), x, y, w, h);
+        
+        // Estrategia por defecto (movimiento con teclado)
+        this.estrategiaMovimiento = new MovimientoTeclado();
     }
 
-    // Aplicar el paso del Template Method
-    @Override
-    protected void mover(float dt) 
+    // Permite cambiar la forma de moverse en tiempo de ejecución
+    public void setEstrategiaMovimiento(EstrategiaMovimiento estrategiaMovimiento)
     {
-        float nx = getX();
+        this.estrategiaMovimiento = estrategiaMovimiento;
+    }
 
-        if (Gdx.input.isKeyPressed(Input.Keys.LEFT) ||
-            Gdx.input.isKeyPressed(Input.Keys.A)) {
-            nx -= velocidad * dt;
+    // Paso del Template Method
+    @Override
+    protected void mover(float dt) {
+        if (estrategiaMovimiento != null) {
+            estrategiaMovimiento.mover(this, dt);
         }
-
-        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) ||
-            Gdx.input.isKeyPressed(Input.Keys.D)) {
-            nx += velocidad * dt;
-        }
-
-        // Mantener el tarro dentro del mundo
-        setXLimites(nx, ConstantesJuego.ANCHO_MUNDO);
     }
 
     @Override
@@ -38,3 +35,4 @@ public class Tarro extends Entidad implements Colisionable
         // La lógica concreta se maneja en PantallaJuego
     }
 }
+
