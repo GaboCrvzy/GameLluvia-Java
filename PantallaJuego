@@ -61,6 +61,10 @@ public class PantallaJuego extends ScreenAdapter {
         float wTarro = 64f, hTarro = 64f;
         tarro = new Tarro((ConstantesJuego.ANCHO_MUNDO - wTarro) * 0.5f, 20f, wTarro, hTarro);
 
+        // Estrategia de movimiento inicial (Strategy)
+        // 1 = teclado (por defecto)
+        tarro.setEstrategiaMovimiento(new MovimientoTeclado());
+
         // Estado inicial de la partida
         gotasBuenas.clear();
         gotasMalas.clear();
@@ -72,7 +76,7 @@ public class PantallaJuego extends ScreenAdapter {
     @Override
     public void render(float delta) 
     {
-        // Reinicio rápido si termimo
+        // Reinicio rápido si termino
         if (estado != Estado.JUGANDO &&
             (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || 
              Gdx.input.isButtonJustPressed(Input.Buttons.LEFT))) {
@@ -101,6 +105,7 @@ public class PantallaJuego extends ScreenAdapter {
         font.getData().setScale(1.0f);
         font.draw(batch, "Puntos: " + puntos, 10, ConstantesJuego.ALTO_MUNDO - 10);
         font.draw(batch, "Vidas: "  + vidas,  10, ConstantesJuego.ALTO_MUNDO - 30);
+        font.draw(batch, "1: Teclado | 2: Auto", 10, ConstantesJuego.ALTO_MUNDO - 50);
 
         if (estado == Estado.GANASTE) {
             font.getData().setScale(1.4f);
@@ -116,6 +121,10 @@ public class PantallaJuego extends ScreenAdapter {
     }
 
     private void actualizar(float dt) {
+        // Cambiar estrategia en tiempo de ejecución (Strategy)
+        manejarCambioEstrategia();
+
+        // Actualizar jugador usando la estrategia actual
         tarro.update(dt);
 
         // Spawn
@@ -163,6 +172,18 @@ public class PantallaJuego extends ScreenAdapter {
                 if (sndGolpeMala != null) sndGolpeMala.play();
                 verificarEstado();
             }
+        }
+    }
+
+    // --- NUEVO: selección de estrategia de movimiento ---
+    private void manejarCambioEstrategia() {
+        // 1 → movimiento por teclado
+        if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_1)) {
+            tarro.setEstrategiaMovimiento(new MovimientoTeclado());
+        }
+        // 2 → movimiento automático (demostración de otra Strategy)
+        else if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_2)) {
+            tarro.setEstrategiaMovimiento(new MovimientoAutomatico());
         }
     }
 
