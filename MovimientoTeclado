@@ -1,0 +1,26 @@
+package com.tuempresa.gamelluvia;
+
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
+
+public class MovimientoTeclado implements EstrategiaMovimiento {
+
+    @Override
+    public void mover(Tarro tarro, float dt) {
+        float velocidad = ConstantesJuego.VELOCIDAD_TARRO;
+        float nx = tarro.getX();
+
+        if (Gdx.input.isKeyPressed(Input.Keys.LEFT) ||
+            Gdx.input.isKeyPressed(Input.Keys.A)) {
+            nx -= velocidad * dt;
+        }
+
+        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) ||
+            Gdx.input.isKeyPressed(Input.Keys.D)) {
+            nx += velocidad * dt;
+        }
+
+        // Mantener el tarro dentro del mundo
+        tarro.setXLimites(nx, ConstantesJuego.ANCHO_MUNDO);
+    }
+}
