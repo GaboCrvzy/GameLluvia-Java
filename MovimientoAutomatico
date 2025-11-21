@@ -1,0 +1,28 @@
+package com.tuempresa.gamelluvia;
+
+public class MovimientoAutomatico implements EstrategiaMovimiento {
+
+    private boolean haciaDerecha = true;
+
+    @Override
+    public void mover(Tarro tarro, float dt) {
+        float velocidad = ConstantesJuego.VELOCIDAD_TARRO;
+        float nx = tarro.getX();
+
+        if (haciaDerecha) {
+            nx += velocidad * dt;
+            if (nx + tarro.getWidth() >= ConstantesJuego.ANCHO_MUNDO) {
+                nx = ConstantesJuego.ANCHO_MUNDO - tarro.getWidth();
+                haciaDerecha = false;
+            }
+        } else {
+            nx -= velocidad * dt;
+            if (nx <= 0f) {
+                nx = 0f;
+                haciaDerecha = true;
+            }
+        }
+
+        tarro.setXLimites(nx, ConstantesJuego.ANCHO_MUNDO);
+    }
+}
